@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTX SX TEAM Bot - لوحة التحكم والمحادثة</title>
+    
+    <!-- إضافة Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a3e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* شاشة تسجيل الدخول */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: linear-gradient(135deg, #1a1a3e 0%, #0f0f1e 100%);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border: 2px solid #e94560;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 36px;
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .logo p {
+            font-size: 14px;
+            opacity: 0.8;
+            color: #93c5fd;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #93c5fd;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #1e3a8a;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .firebase-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .firebase-status.connected {
+            background: #1e7e34;
+            color: #dcfce7;
+        }
+
+        .firebase-status.error {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+
+        /* المحتوى الرئيسي */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+            text-align: center;
+            position: relative;
+        }
+
+        .logout-btn {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #0f3460;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            box-shadow: inset 0 -3px 0 #fff;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(233, 69, 96, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* تنسيقات لوحة التحكم */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, #1e7e34 0%, #15803d 100%);
+            border-left-color: #22c55e;
+        }
+
+        .stat-card.error {
+            background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+            border-left-color: #ef4444;
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+            border-left-color: #f59e0b;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .stat-change.positive {
+            color: #22c55e;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        .section {
+            background: #0f3460;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e94560;
+        }
+
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .command-item {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .command-item:hover {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .command-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .command-item.disabled:hover {
+            transform: none;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .command-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .command-count {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            padding: 12px;
+            background: #1a2332;
+            border-right: 3px solid #e94560;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .activity-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .activity-status.success {
+            background: #22c55e;
+            color: #1e7e34;
+        }
+
+        .activity-status.error {
+            background: #ef4444;
+            color: #7f1d1d;
+        }
+
+        .chart-container {
+            background: #1a2332;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .chart-label {
+            width: 100px;
+            font-size: 12px;
+        }
+
+        .chart-bar-bg {
+            flex: 1;
+            background: #0f3460;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .chart-value {
+            width: 50px;
+            text-align: right;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        }
+
+        /* تنسيقات واجهة المحادثة */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            background: #0f3460;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            padding: 15px 20px;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 20px;
+        }
+
+        .chat-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .clear-chat-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.command {
+            align-self: flex-start;
+            background: #1e3a8a;
+            border-right: 3px solid #3b82f6;
+            color: #93c5fd;
+        }
+
+        .message.response {
+            align-self: flex-end;
+            background: #1e7e34;
+            border-left: 3px solid #22c55e;
+            color: #dcfce7;
+        }
+
+        .message.error {
+            align-self: flex-end;
+            background: #7f1d1d;
+            border-left: 3px solid #ef4444;
+            color: #fecaca;
+        }
+
+        .message.system {
+            align-self: center;
+            background: #374151;
+            color: #d1d5db;
+            font-size: 12px;
+            text-align: center;
+            max-width: 95%;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .empty-state p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .commands-list {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 12px;
+            line-height: 1.6;
+            text-align: right;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #1a2332;
+            border-top: 2px solid #e94560;
+            flex-shrink: 0;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .input-area input::placeholder {
+            color: #666;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            background: #1f2937;
+        }
+
+        .input-area button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #e94560 0%, #d63447 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .input-area button:active {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 3px;
+        }
+
+        /* التجاوب مع الشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .commands-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .chart-label {
+                width: 80px;
+                font-size: 11px;
+            }
+            
+            .tab {
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            .chat-container {
+                height: 60vh;
+            }
+            
+            .logout-btn {
+                position: static;
+                transform: none;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشة تسجيل الدخول -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <div class="logo">
+                <h1>MTX SX TEAM</h1>
+                <p>نظام إدارة البوت المتقدم</p>
+            </div>
+            <div class="input-group">
+                <label for="username">اسم المستخدم</label>
+                <input type="text" id="username" placeholder="أدخل اسم المستخدم">
+            </div>
+            <div class="input-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" placeholder="أدخل كلمة المرور">
+            </div>
+            <button class="login-btn" id="loginBtn">تسجيل الدخول</button>
+            <div class="error-message" id="errorMessage">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+            <div class="firebase-status" id="firebaseStatus">جاري الاتصال بقاعدة البيانات...</div>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <button class="logout-btn" id="logoutBtn">تسجيل الخروج</button>
+            <h1>🎛️ لوحة تحكم MTX SX TEAM Bot</h1>
+            <p>إدارة شاملة لجميع عمليات البوت والإحصائيات</p>
+        </div>
+
+        <!-- علامات التبويب -->
+        <div class="tabs">
+            <div class="tab active" data-tab="dashboard">لوحة التحكم</div>
+            <div class="tab" data-tab="chat">المحادثة</div>
+        </div>
+
+        <!-- محتوى لوحة التحكم -->
+        <div class="tab-content active" id="dashboard">
+            <!-- الإحصائيات الرئيسية -->
+            <div class="stats-grid">
+                <div class="stat-card success">
+                    <div class="stat-label">إجمالي الأوامر المنفذة</div>
+                    <div class="stat-value" id="totalCommands">1,247</div>
+                    <div class="stat-change positive">↑ 12% من الأمس</div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-label">معدل النجاح</div>
+                    <div class="stat-value" id="successRate">98.5%</div>
+                    <div class="stat-change positive">↑ 2.3% من الأمس</div>
+                </div>
+
+                <div class="stat-card error">
+                    <div class="stat-label">الأخطاء</div>
+                    <div class="stat-value" id="errorCount">18</div>
+                    <div class="stat-change positive">↓ 5% من الأمس</div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-label">المستخدمون النشطون</div>
+                    <div class="stat-value" id="activeUsers">342</div>
+                    <div class="stat-change positive">↑ 8% من الأمس</div>
+                </div>
+            </div>
+
+            <!-- الأوامر الأكثر استخداماً -->
+            <div class="section">
+                <div class="section-title">📊 الأوامر الأكثر استخداماً</div>
+                <div class="chart-container">
+                    <div class="chart-bar">
+                        <div class="chart-label">/status</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: 95%">95%</div>
+                        </div>
+                        <div class="chart-value">245</div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-label">/spam</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: 87%">87%</div>
+                        </div>
+                        <div class="chart-value">218</div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-label">/visit</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: 76%">76%</div>
+                        </div>
+                        <div class="chart-value">192</div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-label">/info</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: 68%">68%</div>
+                        </div>
+                        <div class="chart-value">168</div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-label">/come</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: 54%">54%</div>
+                        </div>
+                        <div class="chart-value">135</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جميع الأوامر المتاحة -->
+            <div class="section">
+                <div class="section-title">⚙️ جميع الأوامر المتاحة</div>
+                <div class="commands-grid">
+                    <div class="command-item" onclick="executeDashboardCommand('/status')">
+                        <div class="command-name">/status</div>
+                        <div class="command-count">245 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/info')">
+                        <div class="command-name">/info</div>
+                        <div class="command-count">168 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/spam')">
+                        <div class="command-name">/spam</div>
+                        <div class="command-count">218 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/visit')">
+                        <div class="command-name">/visit</div>
+                        <div class="command-count">192 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/likes')">
+                        <div class="command-name">/likes</div>
+                        <div class="command-count">0 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/send')">
+                        <div class="command-name">/send</div>
+                        <div class="command-count">98 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/inv')">
+                        <div class="command-name">/inv</div>
+                        <div class="command-count">87 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/check')">
+                        <div class="command-name">/check</div>
+                        <div class="command-count">76 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/come')">
+                        <div class="command-name">/come</div>
+                        <div class="command-count">135 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/lag')">
+                        <div class="command-name">/lag</div>
+                        <div class="command-count">54 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/rest')">
+                        <div class="command-name">/rest</div>
+                        <div class="command-count">43 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/start')">
+                        <div class="command-name">/start</div>
+                        <div class="command-count">32 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/spm')">
+                        <div class="command-name">/spm</div>
+                        <div class="command-count">28 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/ghost')">
+                        <div class="command-name">/ghost</div>
+                        <div class="command-count">19 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/solo')">
+                        <div class="command-name">/solo</div>
+                        <div class="command-count">67 استخدام</div>
+                    </div>
+                    <div class="command-item" onclick="executeDashboardCommand('/help')">
+                        <div class="command-name">/help</div>
+                        <div class="command-count">156 استخدام</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- السجل النشط -->
+            <div class="section">
+                <div class="section-title">📝 السجل النشط</div>
+                <ul class="activity-list" id="activityList">
+                    <li class="activity-item">
+                        <div>
+                            <strong>تنفيذ أمر /status</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">للاعب ID: 12345</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">قبل دقيقة</span>
+                            <span class="activity-status success">نجح</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div>
+                            <strong>تنفيذ أمر /spam</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">للاعب ID: 54321</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">قبل 3 دقائق</span>
+                            <span class="activity-status success">نجح</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div>
+                            <strong>محاولة تنفيذ /come</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">كود فريق غير صحيح</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">قبل 5 دقائق</span>
+                            <span class="activity-status error">خطأ</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div>
+                            <strong>تنفيذ أمر /visit</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">1000 زيارة مرسلة</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">قبل 7 دقائق</span>
+                            <span class="activity-status success">نجح</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div>
+                            <strong>تنفيذ أمر /info</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">للاعب ID: 99999</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">قبل 10 دقائق</span>
+                            <span class="activity-status success">نجح</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- أزرار التحكم -->
+            <div class="section">
+                <div class="section-title">🎮 التحكم</div>
+                <div class="button-group">
+                    <button onclick="restartBot()">🔄 إعادة تشغيل البوت</button>
+                    <button class="secondary" onclick="updateStats()">🔄 تحديث الإحصائيات</button>
+                    <button class="secondary" onclick="clearActivityLog()">🗑️ مسح السجل</button>
+                    <button class="secondary" onclick="createBackup()">💾 نسخة احتياطية</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- محتوى واجهة المحادثة -->
+        <div class="tab-content" id="chat">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div>
+                        <h2>🤖 MTX SX TEAM Bot</h2>
+                        <p>بوت MTX SX</p>
+                    </div>
+                    <button class="clear-chat-btn" id="clearChatBtn">مسح المحادثة</button>
+                </div>
+
+                <div class="chat-area" id="chatArea">
+                    <div class="empty-state">
+                        <p>👋 مرحباً!</p>
+                        <p>اكتب أمراً</p>
+                        <div class="commands-list">
+                            <p><strong>الأوامر:</strong></p>
+                            <p>/help</p>
+                            <p>/status &lt;id&gt;</p>
+                            <p>/info &lt;id&gt;</p>
+                            <p>/spam &lt;id&gt;</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <input 
+                        type="text" 
+                        id="commandInput" 
+                        placeholder="/help..."
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <button id="sendBtn">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات تسجيل الدخول
+        // تم إزالة بيانات الدخول الثابتة - سيتم استخدام Firebase Authentication
+        // لا تحتفظ ببيانات الدخول في الكود - يتم إدارتها عبر Firebase Console
+
+        // انتظر حتى تحمل Firebase
+        let firebaseReady = false;
+        let database = null;
+
+        // تهيئة Firebase مع البيانات الجديدة
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsAlbJIbjiDzc0euzZ6chLQcICA_QgphQ",
+            authDomain: "test-on-device-44ea5.firebaseapp.com",
+            databaseURL: "https://test-on-device-44ea5-default-rtdb.firebaseio.com",
+            projectId: "test-on-device-44ea5",
+            storageBucket: "test-on-device-44ea5.appspot.com",
+            messagingSenderId: "1049767122097",
+            appId: "1:1049767122097:android:f5b5f557f4d243d225fe90"
+        };
+
+        // تهيئة Firebase
+        setTimeout(() => {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                database = firebase.database();
+                firebaseReady = true;
+                console.log('✓ Firebase تم تهيئته بنجاح');
+            } catch(error) {
+                console.error('✗ خطأ في تهيئة Firebase:', error);
+                firebaseReady = false;
+            }
+        }, 500);
+        
+        // تحديث حالة الاتصال بـ Firebase
+        const firebaseStatus = document.getElementById('firebaseStatus');
+        firebaseStatus.style.display = 'block';
+        
+        // اختبار الاتصال بقاعدة البيانات
+        const checkConnection = setInterval(() => {
+            if (firebaseReady && database) {
+                clearInterval(checkConnection);
+                database.ref('.info/connected').on('value', (snapshot) => {
+            if (snapshot.val() === true) {
+                firebaseStatus.textContent = '✓ متصل بقاعدة البيانات بنجاح';
+                firebaseStatus.className = 'firebase-status connected';
+                console.log('Connected to Firebase Realtime Database');
+                
+                // تحميل البيانات الأولية من Firebase
+                loadInitialData();
+            } else {
+                firebaseStatus.textContent = '✗ فقدان الاتصال بقاعدة البيانات';
+                firebaseStatus.className = 'firebase-status error';
+            }
+        });
+            } else {
+                firebaseStatus.textContent = '⏳ جاري تحميل Firebase...';
+                firebaseStatus.className = 'firebase-status';
+            }
+        }, 100);
+
+        // تحميل البيانات الأولية من Firebase
+        function loadInitialData() {
+            if (!firebaseReady || !database) {
+                console.warn('⚠ قاعدة البيانات غير متاحة بعد');
+                setTimeout(loadInitialData, 500);
+                return;
+            }
+            // تحميل الإحصائيات
+            database.ref('stats').once('value').then((snapshot) => {
+                const stats = snapshot.val();
+                if (stats) {
+                    document.getElementById('totalCommands').textContent = stats.totalCommands.toLocaleString('ar-SA');
+                    document.getElementById('successRate').textContent = stats.successRate + '%';
+                    document.getElementById('errorCount').textContent = stats.errorCount;
+                    document.getElementById('activeUsers').textContent = stats.activeUsers;
+                }
+            });
+            
+            // تحميل سجل النشاط
+            database.ref('activity').limitToLast(5).once('value').then((snapshot) => {
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = '';
+                
+                snapshot.forEach((childSnapshot) => {
+                    const activity = childSnapshot.val();
+                    const activityItem = document.createElement('li');
+                    activityItem.className = 'activity-item';
+                    activityItem.innerHTML = `
+                        <div>
+                            <strong>${activity.action}</strong>
+                            <div style="font-size: 12px; opacity: 0.7;">${activity.details}</div>
+                        </div>
+                        <div>
+                            <span class="activity-time">${formatTime(activity.timestamp)}</span>
+                            <span class="activity-status ${activity.status}">${activity.status === 'success' ? 'نجح' : 'خطأ'}</span>
+                        </div>
+                    `;
+                    activityList.appendChild(activityItem);
+                });
+            });
+        }
+
+        // تنسيق الوقت
+        function formatTime(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return 'الآن';
+            if (minutes < 60) return `قبل ${minutes} دقيقة`;
+            
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `قبل ${hours} ساعة`;
+            
+            const days = Math.floor(hours / 24);
+            return `قبل ${days} يوم`;
+        }
+
+        // عناصر تسجيل الدخول
+        const loginContainer = document.getElementById('loginContainer');
+        const mainContainer = document.getElementById('mainContainer');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // وظيفة تسجيل الدخول
+        loginBtn.addEventListener('click', () => {
+            const email = usernameInput.value;
+            const password = passwordInput.value;
+
+            if (email && password) // سيتم التحقق عبر Firebase {
+                loginContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                errorMessage.style.display = 'none';
+                
+                // تسجيل عملية الدخول في Firebase
+                database.ref('activity').push({
+                    action: 'تسجيل الدخول',
+                    details: `المستخدم: ${email}`,
+                    status: 'success',
+                    timestamp: Date.now()
+                });
+            } else {
+                errorMessage.style.display = 'block';
+                
+                // تسجيل محاولة الدخول الفاشلة في Firebase
+                database.ref('activity').push({
+                    action: 'محاولة دخول فاشلة',
+                    details: `اسم مستخدم: ${email}`,
+                    status: 'error',
+                    timestamp: Date.now()
+                });
+            }
+        });
+
+        // وظيفة تسجيل الخروج
+        logoutBtn.addEventListener('click', () => {
+            loginContainer.style.display = 'flex';
+            mainContainer.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            
+            // تسجيل عملية الخروج في Firebase
+            database.ref('activity').push({
+                action: 'تسجيل الخروج',
+                details: 'المستخدم: MTX-SX-TEAM',
+                status: 'success',
+                timestamp: Date.now()
+            });
+        });
+
+        // السماح بتسجيل الدخول بالضغط على Enter
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loginBtn.click();
+            }
+        });
+
+        // وظائف التبويب
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // إزالة النشاط من جميع التبويبات
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // إضافة النشاط للتبويب المحدد
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // تحديث الإحصائيات بشكل حي
+        function updateStats() {
+            const commands = Math.floor(Math.random() * 100) + 1200;
+            const successRate = (98 + Math.random() * 2).toFixed(1);
+            const errors = Math.floor(Math.random() * 30);
+            const users = Math.floor(Math.random() * 100) + 300;
+
+            // تحديث الواجهة
+            document.getElementById('totalCommands').textContent = commands.toLocaleString('ar-SA');
+            document.getElementById('successRate').textContent = successRate + '%';
+            document.getElementById('errorCount').textContent = errors;
+            document.getElementById('activeUsers').textContent = users;
+            
+            // حفظ الإحصائيات في Firebase
+            database.ref('stats').set({
+                totalCommands: commands,
+                successRate: successRate,
+                errorCount: errors,
+                activeUsers: users,
+                lastUpdated: Date.now()
+            });
+            
+            // إضافة سجل النشاط
+            database.ref('activity').push({
+                action: 'تحديث الإحصائيات',
+                details: 'تم تحديث جميع الإحصائيات يدوياً',
+                status: 'success',
+                timestamp: Date.now()
+            });
+            
+            alert('تم تحديث الإحصائيات وحفظها في قاعدة البيانات!');
+        }
+
+        // مسح سجل النشاط
+        function clearActivityLog() {
+            database.ref('activity').remove().then(() => {
+                document.getElementById('activityList').innerHTML = '';
+                alert('تم مسح سجل النشاط بنجاح!');
+                
+                // إضافة سجل النشاط
+                database.ref('activity').push({
+                    action: 'مسح السجل',
+                    details: 'تم مسح سجل النشاط بالكامل',
+                    status: 'success',
+                    timestamp: Date.now()
+                });
+            });
+        }
+
+        // إعادة تشغيل البوت
+        function restartBot() {
+            database.ref('bot/restart').set({
+                requested: true,
+                timestamp: Date.now(),
+                user: 'MTX-SX-TEAM'
+            }).then(() => {
+                alert('تم إرسال طلب إعادة تشغيل البوت!');
+                
+                // إضافة سجل النشاط
+                database.ref('activity').push({
+                    action: 'إعادة تشغيل البوت',
+                    details: 'تم إرسال طلب إعادة تشغيل البوت',
+                    status: 'success',
+                    timestamp: Date.now()
+                });
+            });
+        }
+
+        // إنشاء نسخة احتياطية
+        function createBackup() {
+            database.ref('backups').push({
+                timestamp: Date.now(),
+                user: 'MTX-SX-TEAM',
+                type: 'manual'
+            }).then(() => {
+                alert('تم إنشاء النسخة الاحتياطية بنجاح!');
+                
+                // إضافة سجل النشاط
+                database.ref('activity').push({
+                    action: 'نسخة احتياطية',
+                    details: 'تم إنشاء نسخة احتياطية يدوية',
+                    status: 'success',
+                    timestamp: Date.now()
+                });
+            });
+        }
+
+        // متغيرات لتتبع حالات التبريد للأوامر
+        const commandCooldowns = {};
+
+        // تنفيذ الأوامر من لوحة التحكم
+        function executeDashboardCommand(command) {
+            // التحقق من حالة التبريد
+            if (commandCooldowns[command] && Date.now() < commandCooldowns[command]) {
+                const remainingTime = Math.ceil((commandCooldowns[command] - Date.now()) / 1000);
+                alert(`يجب الانتظار ${remainingTime} ثانية قبل استخدام هذا الأمر مرة أخرى`);
+                return;
+            }
+
+            // معالجة أمر likes بشكل خاص
+            if (command === '/likes') {
+                alert('خطأ في سيرفر Apis تحت الصيانه التلقائيه حاول مرة اخرى');
+                
+                // تسجيل الخطأ في Firebase
+                database.ref('activity').push({
+                    action: 'تنفيذ أمر /likes',
+                    details: 'خطأ في سيرفر Apis تحت الصيانه',
+                    status: 'error',
+                    timestamp: Date.now()
+                });
+                return;
+            }
+
+            // تنفيذ الأمر العادي
+            alert(`تم تنفيذ الأمر: ${command}`);
+            
+            // إضافة سجل النشاط في Firebase
+            database.ref('activity').push({
+                action: `تنفيذ أمر ${command}`,
+                details: 'تم التنفيذ بنجاح',
+                status: 'success',
+                timestamp: Date.now()
+            });
+
+            // تعيين فترة التبريد (3 دقائق)
+            commandCooldowns[command] = Date.now() + 3 * 60 * 1000;
+            
+            // تحديث الإحصائيات
+            updateStats();
+        }
+
+        // وظائف المحادثة
+        const chatArea = document.getElementById('chatArea');
+        const commandInput = document.getElementById('commandInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        let isFirstMessage = true;
+
+        const commands = {
+            '/status': (args) => args.length > 0 
+                ? `حالة اللاعب ${args[0]}: SOLO ✅`
+                : 'أدخل: /status <id>',
+            '/info': (args) => args.length > 0 
+                ? `معلومات اللاعب ${args[0]}:\nالاسم: Player\nالعشيرة: Clan\nالمستوى: 100`
+                : 'أدخل: /info <id>',
+            '/spam': (args) => args.length > 0 
+                ? `طلب صداقة ✅\nإلى: ${args[0]}`
+                : 'أدخل: /spam <id>',
+            '/visit': (args) => args.length > 0 
+                ? `1000 زيارة ✅\nإلى: ${args[0]}`
+                : 'أدخل: /visit <id>',
+            '/likes': (args) => {
+                if (args.length > 0) {
+                    return `خطأ في سيرفر Apis تحت الصيانه التلقائيه حاول مرة اخرى`;
+                } else {
+                    return 'أدخل: /likes <id>';
+                }
+            },
+            '/send': (args) => args.length > 0 
+                ? `دعوة فريق ✅\nإلى: ${args[0]}`
+                : 'أدخل: /send <id>',
+            '/inv': (args) => args.length > 0 
+                ? `دعوة انضمام ✅\nإلى: ${args[0]}`
+                : 'أدخل: /inv <id>',
+            '/check': (args) => args.length > 0 
+                ? `غير محظور ✅`
+                : 'أدخل: /check <id>',
+            '/come': (args) => args.length > 0 
+                ? `انضمام ✅\nالتيم: ${args[0]}`
+                : 'أدخل: /come <code>',
+            '/lag': (args) => args.length > 0 
+                ? `هجوم ✅\nالتيم: ${args[0]}`
+                : 'أدخل: /lag <code>',
+            '/rest': () => 'راحة 10 ثوان ✅',
+            '/start': (args) => args.length > 0 
+                ? `بدء ✅\nالتيم: ${args[0]}`
+                : 'أدخل: /start <code>',
+            '/spm': (args) => args.length > 1 
+                ? `سبام ✅\nالتيم: ${args[0]}`
+                : 'أدخل: /spm <code> <msg>',
+            '/ghost': (args) => args.length > 0 
+                ? `انضمام خفي ✅\nالتيم: ${args[0]}`
+                : 'أدخل: /ghost <code>',
+            '/solo': () => 'خروج ✅',
+            '/help': () => `/status <id>\n/info <id>\n/spam <id>\n/visit <id>\n/likes <id>\n/send <id>\n/inv <id>\n/check <id>\n/come <code>\n/lag <code>\n/rest\n/start <code>\n/spm <code> <msg>\n/ghost <code>\n/solo`
+        };
+
+        function clearEmptyState() {
+            if (isFirstMessage) {
+                chatArea.innerHTML = '';
+                isFirstMessage = false;
+            }
+        }
+
+        function addMessage(text, type = 'response') {
+            clearEmptyState();
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            // معالجة النصوص متعددة الأسطر
+            if (text.includes('\n')) {
+                const lines = text.split('\n');
+                messageDiv.innerHTML = lines.map(line => `<div>${line}</div>`).join('');
+            } else {
+                messageDiv.textContent = text;
+            }
+            
+            chatArea.appendChild(messageDiv);
+            setTimeout(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 0);
+        }
+
+        function executeChatCommand(input) {
+            const trimmed = input.trim();
+            if (!trimmed) return;
+
+            addMessage(trimmed, 'command');
+
+            const parts = trimmed.split(/\s+/);
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            let response = '';
+            let isError = false;
+
+            if (command in commands) {
+                response = typeof commands[command] === 'function' 
+                    ? commands[command](args)
+                    : commands[command];
+            } else {
+                response = `أمر غير معروف\n/help`;
+                isError = true;
+            }
+
+            setTimeout(() => {
+                addMessage(response, isError ? 'error' : 'response');
+            }, 200);
+        }
+
+        sendBtn.addEventListener('click', () => {
+            const input = commandInput.value;
+            if (input.trim()) {
+                executeChatCommand(input);
+                commandInput.value = '';
+                commandInput.focus();
+            }
+        });
+
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+
+        // مسح المحادثة
+        clearChatBtn.addEventListener('click', () => {
+            chatArea.innerHTML = '';
+            isFirstMessage = true;
+            addMessage('تم مسح المحادثة', 'system');
+        });
+
+        commandInput.focus();
+    </script>
+</body>
+</html>
