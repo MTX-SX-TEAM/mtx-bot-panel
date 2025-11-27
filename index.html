@@ -1133,36 +1133,40 @@
             const email = usernameInput.value;
             const password = passwordInput.value;
 
-            if (email && password) {
-                firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        // تسجيل الدخول بنجاح
-                        loginContainer.style.display = 'none';
-                        mainContainer.style.display = 'block';
-                        errorMessage.style.display = 'none';
-                        
-                        // تسجيل عملية الدخول في Firebase
-                        database.ref('activity').push({
-                            action: 'تسجيل الدخول',
-                            details: `المستخدم: ${email}`,
-                            status: 'success',
-                            timestamp: Date.now()
-                        });
-                    })
-                    .catch((error) => {
-                        // فشل تسجيل الدخول
-                        errorMessage.textContent = 'خطأ في تسجيل الدخول: اسم المستخدم أو كلمة المرور غير صحيحة.';
-                        errorMessage.style.display = 'block';
-                        
-                        // تسجيل محاولة الدخول الفاشلة في Firebase
-                        database.ref('activity').push({
-                            action: 'محاولة دخول فاشلة',
-                            details: `اسم مستخدم: ${email} - الخطأ: ${error.code}`,
-                            status: 'error',
-                            timestamp: Date.now()
-                        });
-                    });
+            // بيانات تسجيل الدخول الثابتة
+            const correctUsername = 'MTX-SX-TEAM';
+            const correctPassword = 'MTX-SX-TEAM';
+
+            // التحقق من البيانات الثابتة
+            if (email === correctUsername && password === correctPassword) {
+                // تسجيل الدخول بنجاح
+                loginContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                errorMessage.style.display = 'none';
+                
+                // تسجيل عملية الدخول في Firebase
+                database.ref('activity').push({
+                    action: 'تسجيل الدخول (ببيانات ثابتة)',
+                    details: `المستخدم: ${email}`,
+                    status: 'success',
+                    timestamp: Date.now()
+                });
             } else {
+                // فشل تسجيل الدخول
+                errorMessage.textContent = 'خطأ في تسجيل الدخول: اسم المستخدم أو كلمة المرور غير صحيحة.';
+                errorMessage.style.display = 'block';
+                
+                // تسجيل محاولة الدخول الفاشلة في Firebase
+                database.ref('activity').push({
+                    action: 'محاولة دخول فاشلة',
+                    details: `اسم مستخدم: ${email}`,
+                    status: 'error',
+                    timestamp: Date.now()
+                });
+            }
+            // تم تعطيل المصادقة عبر Firebase مؤقتًا
+            // firebase.auth().signInWithEmailAndPassword(email, password)
+            // ... (باقي الكود)
                 errorMessage.style.display = 'block';
                 
                 // تسجيل محاولة الدخول الفاشلة في Firebase
@@ -1177,22 +1181,18 @@
 
         // وظيفة تسجيل الخروج
         logoutBtn.addEventListener('click', () => {
-            firebase.auth().signOut().then(() => {
-                // تسجيل الخروج بنجاح
-                loginContainer.style.display = 'flex';
-                mainContainer.style.display = 'none';
-                usernameInput.value = '';
-                passwordInput.value = '';
-                
-                // تسجيل عملية الخروج في Firebase
-                database.ref('activity').push({
-                    action: 'تسجيل الخروج',
-                    details: 'المستخدم: MTX-SX-TEAM',
-                    status: 'success',
-                    timestamp: Date.now()
-                });
-            }).catch((error) => {
-                console.error('خطأ في تسجيل الخروج:', error);
+            // تسجيل الخروج بنجاح (بدون Firebase SignOut)
+            loginContainer.style.display = 'flex';
+            mainContainer.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            
+            // تسجيل عملية الخروج في Firebase
+            database.ref('activity').push({
+                action: 'تسجيل الخروج',
+                details: 'المستخدم: MTX-SX-TEAM',
+                status: 'success',
+                timestamp: Date.now()
             });
         });
 
